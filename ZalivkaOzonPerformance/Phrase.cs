@@ -25,5 +25,11 @@ namespace ZalivkaOzonPerformance
         ///on_moderation — релевантность ещё не определена, необходима ручная модерация.
         /// </summary>
         public string relevanceStatus;
+
+        public Phrase(string bid, string phrase)
+        {
+            this.bid = bid ?? throw new ArgumentNullException(nameof(bid));
+            this.phrase = phrase ?? throw new ArgumentNullException(nameof(phrase));
+        }
     }
 }

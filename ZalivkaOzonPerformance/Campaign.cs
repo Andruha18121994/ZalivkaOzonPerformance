@@ -33,6 +33,34 @@ namespace ZalivkaOzonPerformance
         /// </summary>
         string campaignId;
 
+        public Campaign(string title, string dailyBudget, string expenseStrategy, string placement, string campaignId)
+        {
+            this.title = title ?? throw new ArgumentNullException(nameof(title));
+            this.dailyBudget = dailyBudget ?? throw new ArgumentNullException(nameof(dailyBudget));
+            this.expenseStrategy = expenseStrategy ?? throw new ArgumentNullException(nameof(expenseStrategy));
+            this.placement = placement ?? throw new ArgumentNullException(nameof(placement));
+        }
 
+        public Campaign(string title, string dailyBudget, string expenseStrategy, string placement, List<Product> products, string campaignId)
+        {
+            this.title = title ?? throw new ArgumentNullException(nameof(title));
+            this.dailyBudget = dailyBudget ?? throw new ArgumentNullException(nameof(dailyBudget));
+            this.expenseStrategy = expenseStrategy ?? throw new ArgumentNullException(nameof(expenseStrategy));
+            this.placement = placement ?? throw new ArgumentNullException(nameof(placement));
+            this.products = products ?? throw new ArgumentNullException(nameof(products));
+            this.campaignId = campaignId ?? throw new ArgumentNullException(nameof(campaignId));
+        }
+
+        public Campaign(Campaign camp, string campaignId)
+        {
+            if (camp == null) throw new ArgumentNullException(nameof(camp));
+            if (campaignId == null) throw new ArgumentNullException(nameof(campaignId));
+            this.title = camp.title;
+            this.dailyBudget = camp.dailyBudget;
+            this.expenseStrategy= camp.expenseStrategy;
+            this.placement = camp.placement;
+            this.products = camp.products;
+            this.campaignId = campaignId ?? String.Empty;
+        }
     }
 }

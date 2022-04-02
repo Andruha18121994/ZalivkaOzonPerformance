@@ -5,8 +5,54 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ZalivkaOzonPerformance"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Ozon Advertising Mediator" MinHeight="750" MinWidth="700" d:DesignHeight="650" d:DesignWidth="865">
+    <!--<Window.Background>
+        <ImageBrush ImageSource="/bgs7009.jpg" Stretch="UniformToFill"/>
+    </Window.Background>-->
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Width="400" Height="400">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition Height="1.7*"/>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Label HorizontalAlignment="Center" FontSize="16" FontWeight="Bold">Рекламный медиатор Озон</Label>
+        <TextBlock Grid.Row="1" HorizontalAlignment="Center">
+            <Span xml:space="preserve"><Hyperlink NavigateUri="https://docs.google.com/document/d/1RgoFvJecjq2P-ErS_DFdICO0ohjl2RrOD2DH4SawY2g/edit" Click="Hyperlink_Click">Нажмите, чтобы скопировать ссылку на справочные материалы</Hyperlink></Span>
+        </TextBlock>
+        <Label Grid.Row="3" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold">Данные из кабинета Озон</Label>
+        <TextBlock Grid.Row="4" Text="ClientID"/>
+        <TextBox Grid.Row="5"/>
+        <TextBlock Grid.Row="6" Text="Client Secret"/>
+        <TextBox Grid.Row="7"/>
+        <Label Grid.Row="9" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold">Данные из гугл таблиц</Label>
+        <TextBlock Grid.Row="10" Text="Ссылка на таблицу"/>
+        <TextBox Grid.Row="11"/>
+        <TextBlock Grid.Row="12" Text="Название листа с фразами"/>
+        <TextBox Grid.Row="13"/>
+        <TextBlock Grid.Row="14" Text="Название листа со ставками"/>
+        <TextBox Grid.Row="15"/>
+        <!--<Button Grid.Row="16" Content="Проверить" Click="CheckInput"/>-->
+        <TextBlock Grid.Row="17" Text="Статус"/>
+        <Button Grid.Row="19" Content="Залить" Click="Start_Click" FontSize="16" FontWeight="Bold"/>
 
     </Grid>
 </Window>

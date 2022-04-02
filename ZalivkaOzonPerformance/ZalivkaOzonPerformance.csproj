@@ -8,7 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="bgs7009.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Google.Apis.Sheets.v4" Version="1.57.0.2623" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="bgs7009.jpg" />
   </ItemGroup>
 
   <ItemGroup>

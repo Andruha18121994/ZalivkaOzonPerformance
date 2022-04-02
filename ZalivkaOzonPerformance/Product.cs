@@ -29,5 +29,20 @@ namespace ZalivkaOzonPerformance
         /// </summary>
         public List<string> stopWords;
 
+        public Product(string sku, string bid, string groupId, List<Phrase> phrases, List<string> stopWords)
+        {
+            this.sku = sku ?? throw new ArgumentNullException(nameof(sku));
+            this.bid = bid ?? throw new ArgumentNullException(nameof(bid));
+            this.groupId = groupId ?? throw new ArgumentNullException(nameof(groupId));
+            this.phrases = phrases ?? throw new ArgumentNullException(nameof(phrases));
+            this.stopWords = stopWords ?? throw new ArgumentNullException(nameof(stopWords));
+        }
+
+        public Product(string sku, string bid, List<Phrase> phrases)
+        {
+            this.sku = sku ?? throw new ArgumentNullException(nameof(sku));
+            this.bid = bid ?? throw new ArgumentNullException(nameof(bid));
+            this.phrases = phrases ?? throw new ArgumentNullException(nameof(phrases));
+        }
     }
 }

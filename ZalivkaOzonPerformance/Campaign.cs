@@ -11,27 +11,27 @@ namespace ZalivkaOzonPerformance
         /// <summary>
         /// Название рекламной кампании.
         /// </summary>
-        string title;
+        public string title;
         /// <summary>
         /// Ограничение дневного бюджета рекламной кампании. Единица измерения — одна миллионная доля рубля, округляется до копеек. Если поле не задано, дневной бюджет не ограничен.
         /// </summary>
-        string dailyBudget;
+        public string dailyBudget;
         /// <summary>
         /// Способ распределения бюджета: DAILY_BUDGET — бюджет равномерно распределяется по дням; ASAP — быстрая открутка, бюджет не ограничен по дням. По умолчанию — DAILY_BUDGET.
         /// </summary>
-        string expenseStrategy;
+        public string expenseStrategy;
         /// <summary>
         /// Место размещения рекламируемых товаров: PLACEMENT_PDP — карточка товара; PLACEMENT_SEARCH_AND_CATEGORY — поиск и категории.
         /// </summary>
-        string placement;
+        public string placement;
         /// <summary>
         /// !!! только для построения внутренней модели!
         /// </summary>
-        List<Product> products;
+        public List<Product> products;
         /// <summary>
         /// !!! только для построения внутренней модели!
         /// </summary>
-        string campaignId;
+        public string campaignId;
 
         public Campaign(string title, string dailyBudget, string expenseStrategy, string placement, string campaignId)
         {

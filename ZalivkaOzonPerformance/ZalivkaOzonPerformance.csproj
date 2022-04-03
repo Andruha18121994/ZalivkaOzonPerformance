@@ -5,6 +5,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>guitar-pick_icon-icons.com_60160.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +13,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="guitar-pick_icon-icons.com_60160.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Google.Apis.Sheets.v4" Version="1.57.0.2623" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
   </ItemGroup>
 
   <ItemGroup>

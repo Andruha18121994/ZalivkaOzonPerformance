@@ -19,6 +19,9 @@ using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
+using System.Net.Http;
+using System.Net;
+using System.Net.Http.Formatting;
 
 
 //API key AIzaSyBcZzPmjDXPxWTKKKIesPIneb4iaWaiPmA
@@ -39,6 +42,9 @@ namespace ZalivkaOzonPerformance
         private string SpreadsheetId;
         private string PhrasesPageName;
         private string BidsPageName;
+        static string Host = "https://performance.ozon.ru";
+        private TokenClass Token;
+        private List<string> CampaignIds;
         List<List<string>> PhrasesList;
         List<List<string>> BidsList;
         private List<Campaign> Campaigns;
@@ -47,12 +53,12 @@ namespace ZalivkaOzonPerformance
             InitializeComponent();
 
             //For Design
-            ClientID = "utUYsOG4Mp2JxkCPqhrC57UIgPIq5tWx0LXeDDY9FncuEdpLxJIfD0-LQhJL4OlVJHsntvy00wifv_i32Q";
-            ClientSecret = "utUYsOG4Mp2JxkCPqhrC57UIgPIq5tWx0LXeDDY9FncuEdpLxJIfD0-LQhJL4OlVJHsntvy00wifv_i32Q";
+            ClientID = "2459664-1649015479995@advertising.performance.ozon.ru";
+            ClientSecret = "KI_vU3aIEv3Awxi0AO33kJoLcnjFh0YzSJeeyobpD6rxAw9Qmkk8OdA2mSXSW5bgxgmPmVnf6QIBo3wMrA";
             FullSpreadsheetRef = "https://docs.google.com/spreadsheets/d/1ClieG7on-ov-YslrKFrAtpvMFKV1AYh1fx4P5x5ZxWA/edit#gid=0";
             SpreadsheetId = "1ClieG7on-ov-YslrKFrAtpvMFKV1AYh1fx4P5x5ZxWA";
-            PhrasesPageName = "testPhrases";
-            BidsPageName = "testBids";
+            PhrasesPageName = "Фразы";
+            BidsPageName = "Ставки";
 
         }
 
@@ -140,12 +146,12 @@ namespace ZalivkaOzonPerformance
                                 {
                                     i = row.IndexOf(item);
                                     BidsItemsList = new List<object>(bidsPageData[r]);
-                                    if (item.ToString() != "" && i<BidsItemsList.Count-1 && BidsItemsList[i].ToString() != "")
+                                    if (item.ToString() != "" && i < BidsItemsList.Count - 1 && BidsItemsList[i].ToString() != "")
                                     {
                                         if (i > 2) //Фразы и ставки за фразы начинаются с третьего столбца в табличке
                                         {
                                             phrasesList.Add(new Phrase(BidsItemsList[i].ToString(), item.ToString()));
-                                            MessageBox.Show(String.Format("{0}, {1}, {2}", row[0].ToString(), item.ToString(), BidsItemsList[i].ToString()));
+                                            //MessageBox.Show(String.Format("{0}, {1}, {2}", row[0].ToString(), item.ToString(), BidsItemsList[i].ToString()));
                                         }
                                     }
                                 }
@@ -173,17 +179,77 @@ namespace ZalivkaOzonPerformance
 
             return campaignList;
         }
+        private async Task<TokenClass> GetToken(string clientID, string clientSecret)
+        {
+            HttpClient httpClient = new HttpClient();
+            HttpRequestMessage request = new HttpRequestMessage();
+            request.RequestUri = new Uri(Host + "/api/client/token");//https://performance.ozon.ru/api/client/token
+            request.Method = HttpMethod.Post;
+            request.Headers.TryAddWithoutValidation("Accept", "application/json");
+            request.Content = new StringContent("{\"client_id\":\"2459664-1649015479995@advertising.performance.ozon.ru\",\"client_secret\":\"KI_vU3aIEv3Awxi0AO33kJoLcnjFh0YzSJeeyobpD6rxAw9Qmkk8OdA2mSXSW5bgxgmPmVnf6QIBo3wMrA\",\"grant_type\":\"client_credentials\"}", Encoding.UTF8, "application/json");
+            //request.Content = new StringContent("{\"client_id\":\"" + clientID + "\",\"client_secret\":\"" + clientSecret + "\",\"grant_type\":\"client_credentials\"}", Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await httpClient.SendAsync(request);//почему-то при вызове метода программа зависает. Видимо, нет ответа? Возможно, ошибка в request.Content
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                MessageBox.Show(response.StatusCode.ToString());
+                return null;
+            }
+
+            //MessageBox.Show(String.Format("Токен будет работать {0} секунд = {1} минут.", token.expires_in.ToString(), token.expires_in / 60));
+            return await response.Content.ReadAsAsync<TokenClass>();
+
+        }
+        private async Task<List<string>> CreateCampaign(List<Campaign> campaigns, TokenClass token)
+        {
+            string cid;
+            List<string> campaignList = new List<string>();
+            HttpClient httpClient = new HttpClient();
+            HttpRequestMessage request = new HttpRequestMessage();
+            HttpResponseMessage response = new HttpResponseMessage();
+            request.RequestUri = new Uri("https://performance.ozon.ru:443/api/client/campaign/cpm/product");//https://performance.ozon.ru:443/api/client/campaign/cpm/product
+            request.Method = HttpMethod.Post;
+            request.Headers.TryAddWithoutValidation("Accept", "application/json");
+            request.Headers.TryAddWithoutValidation("Authorization", token.access_token);
+
+            foreach (Campaign campaign in campaigns)
+            {
+                request.Content = new StringContent("{\"title\":\"" + campaign.title + "\",\"dailyBudget\":\"" + campaign.dailyBudget + "\",\"placement\":\"" + campaign.placement + "\",\"expenseStrategy\":\"" + campaign.expenseStrategy + "\"}",
+                    Encoding.UTF8, "application/json");
+
+                response = await httpClient.SendAsync(request);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    MessageBox.Show(response.StatusCode.ToString());
+
+                    break;
+                }
+
+                cid = await response.Content.ReadAsAsync<string>();
+                if (cid != "")
+                    campaignList.Add(cid);
+                    MessageBox.Show(cid);
+            }
+            return campaignList;
+        }
 
         private void Start_Click(object sender, RoutedEventArgs e)
         {
+            //Получить кампании
             Campaigns = GetData(SpreadsheetId, PhrasesPageName, BidsPageName);
-
-            //попробуем вывести в табличку?
+            //Получить товары
+            Token = GetToken(ClientID, ClientSecret).GetAwaiter().GetResult();
+            //создать РК, получить их ID
+            CampaignIds = CreateCampaign(Campaigns, Token).GetAwaiter().GetResult();
+            //залить в созданную РК товары
+            //разделить получение токена и создане РК
+            //создать таймер токена
             //запросить список РК - позже
             //найти РК по названию - позже
             //если нет рк, то предложить создать - позже
             //если есть, то предложить удаление всех товаров из РК? - позже
-            //создать РК
         }
 
         private void Hyperlink_Click(object sender, RoutedEventArgs e)

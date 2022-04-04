@@ -122,7 +122,7 @@ namespace ZalivkaOzonPerformance
             string campaignPrefix;
             string campaignName;
             int ic;
-            ic = 1;//для ограничения на 250 товаров.
+            ic = 0;//для ограничения на 250 товаров.
             int r;
             int i;
             List<object> BidsItemsList;
@@ -159,10 +159,10 @@ namespace ZalivkaOzonPerformance
                             productList.Add(new Product(row[0].ToString(), "25", phrasesList));
                             if (productList.Count > 250 * ic)
                             {
-                                if (ic == 1)
+                                if (ic == 0)
                                     campaignName = "тест";
                                 else
-                                    campaignName = "тест" + ic;
+                                    campaignName = "тест" + (ic + 1);
                                 campaignList.Add(new Campaign(campaignName, "500", "DAILY_BUDGET", "PLACEMENT_SEARCH_AND_CATEGORY", ""));
 
                                 ic++;
@@ -176,6 +176,7 @@ namespace ZalivkaOzonPerformance
                 return null;
                 MessageBox.Show("No data found PhrasesPageName.");
             }
+
 
             return campaignList;
         }
@@ -206,7 +207,8 @@ namespace ZalivkaOzonPerformance
         private async Task<List<string>> CreateCampaign(List<Campaign> campaigns, TokenClass token)
         {
             string cid;
-            List<string> campaignList = new List<string>();
+            List<string> campaignIdList = new List<string>();
+            string campaignId;
             HttpClient httpClient = new HttpClient();
             HttpRequestMessage request = new HttpRequestMessage();
             HttpResponseMessage response = new HttpResponseMessage();
@@ -220,7 +222,7 @@ namespace ZalivkaOzonPerformance
                 request.Content = new StringContent("{\"title\":\"" + campaign.title + "\",\"dailyBudget\":\"" + campaign.dailyBudget + "\",\"placement\":\"" + campaign.placement + "\",\"expenseStrategy\":\"" + campaign.expenseStrategy + "\"}",
                     Encoding.UTF8, "application/json");
 
-                response = await httpClient.SendAsync(request);
+                response = httpClient.PostAsync(request.RequestUri, request.Content).Result;
 
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
@@ -229,12 +231,12 @@ namespace ZalivkaOzonPerformance
                     break;
                 }
 
-                cid = await response.Content.ReadAsAsync<string>();
+                cid = await response.Content.ReadAsAsync<string>();//не стринг, а модель кампании: https://docs.ozon.ru/api/performance/#operation/ListCampaigns
                 if (cid != "")
-                    campaignList.Add(cid);
-                    MessageBox.Show(cid);
+                    campaignIdList.Add(cid);
+                MessageBox.Show(cid);
             }
-            return campaignList;
+            return campaignIdList;
         }
 
         private void Start_Click(object sender, RoutedEventArgs e)

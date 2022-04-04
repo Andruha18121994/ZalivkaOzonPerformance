@@ -181,24 +181,26 @@ namespace ZalivkaOzonPerformance
         }
         private async Task<TokenClass> GetToken(string clientID, string clientSecret)
         {
+            TokenClass token;
             HttpClient httpClient = new HttpClient();
             HttpRequestMessage request = new HttpRequestMessage();
             request.RequestUri = new Uri(Host + "/api/client/token");//https://performance.ozon.ru/api/client/token
             request.Method = HttpMethod.Post;
             request.Headers.TryAddWithoutValidation("Accept", "application/json");
-            request.Content = new StringContent("{\"client_id\":\"2459664-1649015479995@advertising.performance.ozon.ru\",\"client_secret\":\"KI_vU3aIEv3Awxi0AO33kJoLcnjFh0YzSJeeyobpD6rxAw9Qmkk8OdA2mSXSW5bgxgmPmVnf6QIBo3wMrA\",\"grant_type\":\"client_credentials\"}", Encoding.UTF8, "application/json");
-            //request.Content = new StringContent("{\"client_id\":\"" + clientID + "\",\"client_secret\":\"" + clientSecret + "\",\"grant_type\":\"client_credentials\"}", Encoding.UTF8, "application/json");
+            request.Content = new StringContent("{\"client_id\":\"" + clientID + "\",\"client_secret\":\"" + clientSecret + "\",\"grant_type\":\"client_credentials\"}", Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await httpClient.SendAsync(request);//почему-то при вызове метода программа зависает. Видимо, нет ответа? Возможно, ошибка в request.Content
+            HttpResponseMessage response = httpClient.PostAsync(request.RequestUri, request.Content).Result;//почему-то при вызове метода программа зависает. Видимо, нет ответа? Возможно, ошибка в request.Content
+
+            token = await response.Content.ReadAsAsync<TokenClass>();
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 MessageBox.Show(response.StatusCode.ToString());
-                return null;
+                return token;
             }
 
-            //MessageBox.Show(String.Format("Токен будет работать {0} секунд = {1} минут.", token.expires_in.ToString(), token.expires_in / 60));
-            return await response.Content.ReadAsAsync<TokenClass>();
+            MessageBox.Show(String.Format("Токен будет работать {0} секунд = {1} минут.", token.expires_in.ToString(), token.expires_in / 60));
+            return token;
 
         }
         private async Task<List<string>> CreateCampaign(List<Campaign> campaigns, TokenClass token)

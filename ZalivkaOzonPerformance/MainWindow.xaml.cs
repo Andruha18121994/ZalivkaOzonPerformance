@@ -47,7 +47,7 @@ namespace ZalivkaOzonPerformance
         private List<string> CampaignIds;
         List<List<string>> PhrasesList;
         List<List<string>> BidsList;
-        private List<Campaign> Campaigns;
+        private List<CampaignForCreate> Campaigns;
         public MainWindow()
         {
             InitializeComponent();
@@ -62,7 +62,7 @@ namespace ZalivkaOzonPerformance
 
         }
 
-        private List<Campaign> GetData(string SpreadsheetId, string PhrasesPageName, string BidsPageName)
+        private List<CampaignForCreate> GetData(string SpreadsheetId, string PhrasesPageName, string BidsPageName)
         {
             UserCredential credential;
 
@@ -114,7 +114,7 @@ namespace ZalivkaOzonPerformance
             // https://docs.google.com/spreadsheets/d/1ClieG7on-ov-YslrKFrAtpvMFKV1AYh1fx4P5x5ZxWA/edit
             response = request.Execute();
 
-            List<Campaign> campaignList;
+            List<CampaignForCreate> campaignList;
             List<Product> productList;
             List<Phrase> phrasesList;
 
@@ -129,7 +129,7 @@ namespace ZalivkaOzonPerformance
             //спарить фразы и ставки
             if (phrasesPageData != null && phrasesPageData.Count > 0)
             {
-                campaignList = new List<Campaign>();
+                campaignList = new List<CampaignForCreate>();
                 productList = new List<Product>();
                 foreach (var row in phrasesPageData)
                 {
@@ -163,7 +163,7 @@ namespace ZalivkaOzonPerformance
                                     campaignName = "тест";
                                 else
                                     campaignName = "тест" + (ic + 1);
-                                campaignList.Add(new Campaign(campaignName, "500", "DAILY_BUDGET", "PLACEMENT_SEARCH_AND_CATEGORY", ""));
+                                campaignList.Add(new CampaignForCreate(campaignName, "500", "DAILY_BUDGET", "PLACEMENT_SEARCH_AND_CATEGORY", ""));
 
                                 ic++;
                             }
@@ -204,7 +204,7 @@ namespace ZalivkaOzonPerformance
             return token;
 
         }
-        private async Task<List<string>> CreateCampaign(List<Campaign> campaigns, TokenClass token)
+        private async Task<List<string>> CreateCampaign(List<CampaignForCreate> campaigns, TokenClass token)
         {
             string cid;
             List<string> campaignIdList = new List<string>();
@@ -214,10 +214,11 @@ namespace ZalivkaOzonPerformance
             HttpResponseMessage response = new HttpResponseMessage();
             request.RequestUri = new Uri("https://performance.ozon.ru:443/api/client/campaign/cpm/product");//https://performance.ozon.ru:443/api/client/campaign/cpm/product
             request.Method = HttpMethod.Post;
-            request.Headers.TryAddWithoutValidation("Accept", "application/json");
-            request.Headers.TryAddWithoutValidation("Authorization", token.access_token);
+            request.Headers.Add("Authorization", "Bearer " + token.access_token);
+            //request.Headers.TryAddWithoutValidation("Accept", "application/json");
+            //request.Headers.TryAddWithoutValidation("Authorization", token.access_token);
 
-            foreach (Campaign campaign in campaigns)
+            foreach (CampaignForCreate campaign in campaigns)
             {
                 request.Content = new StringContent("{\"title\":\"" + campaign.title + "\",\"dailyBudget\":\"" + campaign.dailyBudget + "\",\"placement\":\"" + campaign.placement + "\",\"expenseStrategy\":\"" + campaign.expenseStrategy + "\"}",
                     Encoding.UTF8, "application/json");
@@ -231,7 +232,7 @@ namespace ZalivkaOzonPerformance
                     break;
                 }
 
-                cid = await response.Content.ReadAsAsync<string>();//не стринг, а модель кампании: https://docs.ozon.ru/api/performance/#operation/ListCampaigns
+                cid = await response.Content.ReadAsStringAsync();//не стринг, а список кампаний: https://docs.ozon.ru/api/performance/#operation/ListCampaigns
                 if (cid != "")
                     campaignIdList.Add(cid);
                 MessageBox.Show(cid);

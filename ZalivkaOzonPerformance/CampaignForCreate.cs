@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ZalivkaOzonPerformance
 {
-    internal class Campaign
+    internal class CampaignForCreate
     {
         /// <summary>
         /// Название рекламной кампании.
@@ -33,7 +33,7 @@ namespace ZalivkaOzonPerformance
         /// </summary>
         public string campaignId;
 
-        public Campaign(string title, string dailyBudget, string expenseStrategy, string placement, string campaignId)
+        public CampaignForCreate(string title, string dailyBudget, string expenseStrategy, string placement, string campaignId)
         {
             this.title = title ?? throw new ArgumentNullException(nameof(title));
             this.dailyBudget = dailyBudget ?? throw new ArgumentNullException(nameof(dailyBudget));
@@ -41,7 +41,7 @@ namespace ZalivkaOzonPerformance
             this.placement = placement ?? throw new ArgumentNullException(nameof(placement));
         }
 
-        public Campaign(string title, string dailyBudget, string expenseStrategy, string placement, List<Product> products, string campaignId)
+        public CampaignForCreate(string title, string dailyBudget, string expenseStrategy, string placement, List<Product> products, string campaignId)
         {
             this.title = title ?? throw new ArgumentNullException(nameof(title));
             this.dailyBudget = dailyBudget ?? throw new ArgumentNullException(nameof(dailyBudget));
@@ -51,7 +51,7 @@ namespace ZalivkaOzonPerformance
             this.campaignId = campaignId ?? throw new ArgumentNullException(nameof(campaignId));
         }
 
-        public Campaign(Campaign camp, string campaignId)
+        public CampaignForCreate(CampaignForCreate camp, string campaignId)
         {
             if (camp == null) throw new ArgumentNullException(nameof(camp));
             if (campaignId == null) throw new ArgumentNullException(nameof(campaignId));

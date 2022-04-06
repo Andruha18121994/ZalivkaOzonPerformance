@@ -62,5 +62,9 @@ namespace ZalivkaOzonPerformance
             this.products = camp.products;
             this.campaignId = campaignId ?? String.Empty;
         }
+        public void AddId(string campaignId)
+        {
+            this.campaignId = campaignId;
+        }
     }
 }

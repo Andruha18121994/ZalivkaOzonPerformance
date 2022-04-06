@@ -44,7 +44,7 @@ namespace ZalivkaOzonPerformance
         private string BidsPageName;
         static string Host = "https://performance.ozon.ru";
         private TokenClass Token;
-        private List<string> CampaignIds;
+        private List<CampaignIdFromOzon> CampaignIds;
         List<List<string>> PhrasesList;
         List<List<string>> BidsList;
         private List<CampaignForCreate> Campaigns;
@@ -61,7 +61,6 @@ namespace ZalivkaOzonPerformance
             BidsPageName = "Ставки";
 
         }
-
         private List<CampaignForCreate> GetData(string SpreadsheetId, string PhrasesPageName, string BidsPageName)
         {
             UserCredential credential;
@@ -120,7 +119,7 @@ namespace ZalivkaOzonPerformance
 
             IList<IList<Object>> bidsPageData = response.Values;
             string campaignPrefix;
-            string campaignName;
+            string campaignName = "Ozon Adversiting Mediator";
             int ic;
             ic = 0;//для ограничения на 250 товаров.
             int r;
@@ -159,11 +158,12 @@ namespace ZalivkaOzonPerformance
                             productList.Add(new Product(row[0].ToString(), "25", phrasesList));
                             if (productList.Count > 250 * ic)
                             {
+                                string cn;
                                 if (ic == 0)
-                                    campaignName = "тест";
+                                    cn = campaignName;
                                 else
-                                    campaignName = "тест" + (ic + 1);
-                                campaignList.Add(new CampaignForCreate(campaignName, "500", "DAILY_BUDGET", "PLACEMENT_SEARCH_AND_CATEGORY", ""));
+                                    cn = campaignName + (ic + 1);
+                                campaignList.Add(new CampaignForCreate(cn, "500", "DAILY_BUDGET", "PLACEMENT_SEARCH_AND_CATEGORY", ""));
 
                                 ic++;
                             }
@@ -204,19 +204,17 @@ namespace ZalivkaOzonPerformance
             return token;
 
         }
-        private async Task<List<string>> CreateCampaign(List<CampaignForCreate> campaigns, TokenClass token)
+        private async Task<List<CampaignIdFromOzon>> CreateCampaign(List<CampaignForCreate> campaigns, TokenClass token)
         {
-            string cid;
-            List<string> campaignIdList = new List<string>();
+            CampaignIdFromOzon cid;
+            List<CampaignIdFromOzon> campaignIdList = new List<CampaignIdFromOzon>();
             string campaignId;
             HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.access_token);
             HttpRequestMessage request = new HttpRequestMessage();
             HttpResponseMessage response = new HttpResponseMessage();
             request.RequestUri = new Uri("https://performance.ozon.ru:443/api/client/campaign/cpm/product");//https://performance.ozon.ru:443/api/client/campaign/cpm/product
             request.Method = HttpMethod.Post;
-            request.Headers.Add("Authorization", "Bearer " + token.access_token);
-            //request.Headers.TryAddWithoutValidation("Accept", "application/json");
-            //request.Headers.TryAddWithoutValidation("Authorization", token.access_token);
 
             foreach (CampaignForCreate campaign in campaigns)
             {
@@ -232,14 +230,13 @@ namespace ZalivkaOzonPerformance
                     break;
                 }
 
-                cid = await response.Content.ReadAsStringAsync();//не стринг, а список кампаний: https://docs.ozon.ru/api/performance/#operation/ListCampaigns
-                if (cid != "")
+                cid = await response.Content.ReadAsAsync<CampaignIdFromOzon>();//не стринг, а список кампаний: https://docs.ozon.ru/api/performance/#operation/ListCampaigns
+                if (cid.campaignId != "")
                     campaignIdList.Add(cid);
-                MessageBox.Show(cid);
+                MessageBox.Show(cid.campaignId);
             }
             return campaignIdList;
         }
-
         private void Start_Click(object sender, RoutedEventArgs e)
         {
             //Получить кампании
@@ -248,6 +245,22 @@ namespace ZalivkaOzonPerformance
             Token = GetToken(ClientID, ClientSecret).GetAwaiter().GetResult();
             //создать РК, получить их ID
             CampaignIds = CreateCampaign(Campaigns, Token).GetAwaiter().GetResult();
+
+            if (Campaigns.Count != CampaignIds.Count)
+            {
+                MessageBox.Show("Количество РК и ID разное!");
+                return;
+            }
+            else
+            {
+                for (int i = 0; i <= Campaigns.Count - 1; i++)
+                {
+                    Campaigns[i].campaignId = CampaignIds[i].campaignId;
+                    AddProductsInCampaign(Campaigns[i], Token);
+                }
+            }
+
+
             //залить в созданную РК товары
             //разделить получение токена и создане РК
             //создать таймер токена
@@ -256,7 +269,28 @@ namespace ZalivkaOzonPerformance
             //если нет рк, то предложить создать - позже
             //если есть, то предложить удаление всех товаров из РК? - позже
         }
+        private async void AddProductsInCampaign(CampaignForCreate campaignForCreate, TokenClass token)
+        {
+            CampaignIdFromOzon cid;
+            List<CampaignIdFromOzon> campaignIdList = new List<CampaignIdFromOzon>();
+            string campaignId;
+            HttpClient httpClient = new HttpClient();
+            HttpResponseMessage response = new HttpResponseMessage();
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.access_token);
 
+            ProductsInCampaignOzon productsInCampaignOzon = new ProductsInCampaignOzon(campaignForCreate);
+
+            response = await httpClient.PostAsJsonAsync<ProductsInCampaignOzon>("https://performance.ozon.ru:443/api/client/campaign/" + productsInCampaignOzon.campaignId + "/products", productsInCampaignOzon);
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                MessageBox.Show(response.StatusCode.ToString());
+            }
+            else
+            {
+                MessageBox.Show("Товары заведены в Кампанию с ID:" + productsInCampaignOzon.campaignId);
+            }
+        }
         private void Hyperlink_Click(object sender, RoutedEventArgs e)
         {
             Clipboard.SetText("https://docs.google.com/document/d/1RgoFvJecjq2P-ErS_DFdICO0ohjl2RrOD2DH4SawY2g/edit");

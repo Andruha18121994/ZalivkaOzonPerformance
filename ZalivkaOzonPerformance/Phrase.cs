@@ -16,20 +16,13 @@ namespace ZalivkaOzonPerformance
         /// Поисковая фраза. Обязательное поле.
         /// </summary>
         public string phrase;
-        /// <summary>
-        ///string
-        ///Статус релевантности — соответствия поисковой фразы рекламируемому товару:
-        ///relevant — релевантно;
-        ///not_relevant — не релевантно;
-        ///in_progress — релевантность ещё не определена;
-        ///on_moderation — релевантность ещё не определена, необходима ручная модерация.
-        /// </summary>
         public string relevanceStatus;
 
         public Phrase(string bid, string phrase)
         {
             this.bid = bid ?? throw new ArgumentNullException(nameof(bid));
             this.phrase = phrase ?? throw new ArgumentNullException(nameof(phrase));
+            relevanceStatus = string.Empty;
         }
     }
 }

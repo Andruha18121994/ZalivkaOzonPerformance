@@ -6,14 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
@@ -22,6 +14,7 @@ using Google.Apis.Util.Store;
 using System.Net.Http;
 using System.Net;
 using System.Net.Http.Formatting;
+using System.Text.Json;
 
 
 //API key AIzaSyBcZzPmjDXPxWTKKKIesPIneb4iaWaiPmA
@@ -36,40 +29,36 @@ namespace ZalivkaOzonPerformance
         static string[] Scopes = { SheetsService.Scope.SpreadsheetsReadonly };
         static string ApplicationName = "Google Sheets API .NET Quickstart";
 
-        private string ClientID;
-        private string ClientSecret;
-        private string FullSpreadsheetRef;
-        private string SpreadsheetId;
-        private string PhrasesPageName;
-        private string BidsPageName;
+        private string ClientID = string.Empty;
+        private string ClientSecret = string.Empty;
+        private string SpreadsheetId = string.Empty;
+        private string PhrasesPageName = string.Empty;
+        private string BidsPageName = string.Empty;
         static string Host = "https://performance.ozon.ru";
-        private TokenClass Token;
-        private List<CampaignIdFromOzon> CampaignIds;
-        List<List<string>> PhrasesList;
-        List<List<string>> BidsList;
-        private List<CampaignForCreate> Campaigns;
+        private string CampaignName = string.Empty;
+        private TokenClass Token = new TokenClass();
+        private List<CampaignIdFromOzon> CampaignIds = new List<CampaignIdFromOzon>();
+        private List<CampaignForCreate> Campaigns = new List<CampaignForCreate>();
 
         public MainWindow()
         {
             InitializeComponent();
 
             //For Design
-            ClientID = "2459664-1649015479995@advertising.performance.ozon.ru";
-            ClientSecret = "KI_vU3aIEv3Awxi0AO33kJoLcnjFh0YzSJeeyobpD6rxAw9Qmkk8OdA2mSXSW5bgxgmPmVnf6QIBo3wMrA";
-            FullSpreadsheetRef = "https://docs.google.com/spreadsheets/d/1ClieG7on-ov-YslrKFrAtpvMFKV1AYh1fx4P5x5ZxWA/edit#gid=0";
-            SpreadsheetId = "1ClieG7on-ov-YslrKFrAtpvMFKV1AYh1fx4P5x5ZxWA";
-            PhrasesPageName = "Фразы";
-            BidsPageName = "Ставки";
+            ClientIdTextBox.Text = "2459664-1649015479995@advertising.performance.ozon.ru";
+            ClientSecretTextBox.Text = "KI_vU3aIEv3Awxi0AO33kJoLcnjFh0YzSJeeyobpD6rxAw9Qmkk8OdA2mSXSW5bgxgmPmVnf6QIBo3wMrA";
+            SpreadsheetIdTextBox.Text = "1ClieG7on-ov-YslrKFrAtpvMFKV1AYh1fx4P5x5ZxWA";
+            PhrasesPageNameTextBox.Text = "Фразы";
+            BidsPageNameTextBox.Text = "Ставки";
+            CampaignNameTextBox.Text = "Test Ozon Advertising Medistor";
+            MessageBox.Show("Введены данные по умолчанию - для тестирования");
 
         }
 
 
-        private List<CampaignForCreate> GetData(string SpreadsheetId, string PhrasesPageName, string BidsPageName)
+        private List<CampaignForCreate> GetData(string SpreadsheetId, string PhrasesPageName, string BidsPageName, string CampaignName)
         {
             UserCredential credential;
-
-            List<List<string>> rowsList;
-            List<string> itemsList;
 
             using (var stream =
                 new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
@@ -105,7 +94,7 @@ namespace ZalivkaOzonPerformance
             request = service.Spreadsheets.Values.Get(spreadsheetId, range);
 
             // https://docs.google.com/spreadsheets/d/1ClieG7on-ov-YslrKFrAtpvMFKV1AYh1fx4P5x5ZxWA/edit
-            response = request.Execute();
+            response = request.Execute();//error
             IList<IList<Object>> phrasesPageData = response.Values;
 
             //извлечь ставки
@@ -117,12 +106,9 @@ namespace ZalivkaOzonPerformance
             response = request.Execute();
 
             List<CampaignForCreate> campaignList;
-            List<Product> productList;
             List<Phrase> phrasesList;
 
             IList<IList<Object>> bidsPageData = response.Values;
-            string campaignPrefix;
-            string campaignName = "Ozon Adversiting Mediator";
             int ic;
             ic = 0;//для ограничения на 250 товаров.
             int r;
@@ -132,52 +118,60 @@ namespace ZalivkaOzonPerformance
             if (phrasesPageData != null && phrasesPageData.Count > 0)
             {
                 campaignList = new List<CampaignForCreate>();
-                productList = new List<Product>();
-                foreach (var row in phrasesPageData)
+                if (phrasesPageData.Count > 0)
                 {
-                    if (row != null && row.Count > 0)
-                    {
-                        r = phrasesPageData.IndexOf(row);
-                        if (row.First().ToString() == bidsPageData[r].First().ToString())
-                        {
-                            phrasesList = new List<Phrase>();
+                    string cn;
+                    cn = CampaignName;
+                    //создать РК 
+                    CampaignForCreate campaignForCreate = new CampaignForCreate(cn, "500000000", "DAILY_BUDGET", "PLACEMENT_SEARCH_AND_CATEGORY");
 
-                            foreach (var item in row)
+                    foreach (var row in phrasesPageData)
+                    {
+                        //если в кампании 250 товаров, то добавить кампанию в список и создать новую РК.
+                        if (campaignForCreate.products.Count == 250)
+                        {
+                            cn = CampaignName + (ic + 1);
+                            campaignList.Add(campaignForCreate);
+                            campaignForCreate = new CampaignForCreate(cn, "500000000", "DAILY_BUDGET", "PLACEMENT_SEARCH_AND_CATEGORY");
+                            ic++;
+                        }
+
+                        if (row != null && row.Count > 0)
+                        {
+                            r = phrasesPageData.IndexOf(row);
+                            if (row.First().ToString() == bidsPageData[r].First().ToString())
                             {
-                                if (item != null)
+                                phrasesList = new List<Phrase>();
+                                //добавляем в продукт фразы со ставками
+                                foreach (var item in row)
                                 {
-                                    i = row.IndexOf(item);
-                                    BidsItemsList = new List<object>(bidsPageData[r]);
-                                    if (item.ToString() != "" && i < BidsItemsList.Count - 1 && BidsItemsList[i].ToString() != "")
+                                    if (item != null)
                                     {
-                                        if (i > 2) //Фразы и ставки за фразы начинаются с третьего столбца в табличке
+                                        i = row.IndexOf(item);
+                                        BidsItemsList = new List<object>(bidsPageData[r]);
+                                        if (item.ToString() != "" && i < BidsItemsList.Count - 1 && BidsItemsList[i].ToString() != "")
                                         {
-                                            phrasesList.Add(new Phrase(BidsItemsList[i].ToString(), item.ToString()));
-                                            //MessageBox.Show(String.Format("{0}, {1}, {2}", row[0].ToString(), item.ToString(), BidsItemsList[i].ToString()));
+                                            if (i > 2) //Фразы и ставки за фразы начинаются с третьего столбца в табличке
+                                            {
+                                                phrasesList.Add(new Phrase(BidsItemsList[i].ToString() ?? "", item.ToString() ?? ""));
+                                                //MessageBox.Show(String.Format("{0}, {1}, {2}", row[0].ToString(), item.ToString(), BidsItemsList[i].ToString()));
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            productList.Add(new Product(row[0].ToString(), "25", phrasesList));
-                            if (productList.Count > 250 * ic)
-                            {
-                                string cn;
-                                if (ic == 0)
-                                    cn = campaignName;
-                                else
-                                    cn = campaignName + (ic + 1);
-                                campaignList.Add(new CampaignForCreate(cn, "500", "DAILY_BUDGET", "PLACEMENT_SEARCH_AND_CATEGORY", ""));
 
-                                ic++;
+                                campaignForCreate.AddProduct(new Product(row[0].ToString() ?? "", "", phrasesList));
                             }
                         }
                     }
+
+                    campaignList.Add(campaignForCreate);//добавляем последнюю кампанию в список, которая имеет менее 250 товаров
                 }
             }
             else
             {
-                return null;
                 MessageBox.Show("No data found PhrasesPageName.");
+                return new List<CampaignForCreate>();
             }
 
 
@@ -203,7 +197,7 @@ namespace ZalivkaOzonPerformance
                 return token;
             }
 
-            MessageBox.Show(String.Format("Токен будет работать {0} секунд = {1} минут.", token.expires_in.ToString(), token.expires_in / 60));
+            //MessageBox.Show(String.Format("Токен будет работать {0} секунд = {1} минут.", token.expires_in.ToString(), token.expires_in / 60));
             return token;
 
         }
@@ -211,7 +205,6 @@ namespace ZalivkaOzonPerformance
         {
             CampaignIdFromOzon cid;
             List<CampaignIdFromOzon> campaignIdList = new List<CampaignIdFromOzon>();
-            string campaignId;
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.access_token);
             HttpRequestMessage request = new HttpRequestMessage();
@@ -236,38 +229,80 @@ namespace ZalivkaOzonPerformance
                 cid = await response.Content.ReadAsAsync<CampaignIdFromOzon>();//не стринг, а список кампаний: https://docs.ozon.ru/api/performance/#operation/ListCampaigns
                 if (cid.campaignId != "")
                     campaignIdList.Add(cid);
-                MessageBox.Show(cid.campaignId);
+                //MessageBox.Show(cid.campaignId);
             }
             return campaignIdList;
         }
         private async void AddProductsInCampaign(CampaignForCreate campaignForCreate, TokenClass token)
         {
-            CampaignIdFromOzon cid;
-            List<CampaignIdFromOzon> campaignIdList = new List<CampaignIdFromOzon>();
-            string campaignId;
+            ProductsInCampaignOzon productsInCampaignOzon = new ProductsInCampaignOzon(campaignForCreate);//не передаются Products. Передаются пустые
+
             HttpClient httpClient = new HttpClient();
+            HttpRequestMessage request = new HttpRequestMessage();
             HttpResponseMessage response = new HttpResponseMessage();
             httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.access_token);
+            request.RequestUri = new Uri("https://performance.ozon.ru:443/api/client/campaign/" + campaignForCreate.campaignId + "/products");
+            request.Method = HttpMethod.Post;
+            string jsonString = JsonSerializer.Serialize<ProductsInCampaignOzon>(productsInCampaignOzon);//пустые
+            request.Content = new StringContent(jsonString, Encoding.UTF8, "application/json");//Bad Request
+            response = httpClient.PostAsync(request.RequestUri, request.Content).Result;
 
-            ProductsInCampaignOzon productsInCampaignOzon = new ProductsInCampaignOzon(campaignForCreate);
-
-            response = await httpClient.PostAsJsonAsync<ProductsInCampaignOzon>("https://performance.ozon.ru:443/api/client/campaign/" + productsInCampaignOzon.campaignId + "/products", productsInCampaignOzon);
-
+            //response = await httpClient.PostAsJsonAsync<ProductsInCampaignOzon>("https://performance.ozon.ru:443/api/client/campaign/" + productsInCampaignOzon.campaignId + "/products", productsInCampaignOzon);
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                MessageBox.Show(response.StatusCode.ToString());
-            }
-            else
-            {
-                MessageBox.Show("Товары заведены в Кампанию с ID:" + productsInCampaignOzon.campaignId);
+                MessageBox.Show(response.StatusCode.ToString() + "\n" + response.ReasonPhrase + "\n" + response.Content);
             }
         }
 
 
         private void Start_Click(object sender, RoutedEventArgs e)
         {
+            //ClientID
+            if (ClientIdTextBox.Text.Length < 32)
+            {
+                MessageBox.Show("Слишком короткое значение Client Id.");
+                return;
+            }
+            if (!ClientIdTextBox.Text.Contains("@advertising.performance.ozon.ru"))//Неверный формат
+            {
+                MessageBox.Show("Неверный формат Client Id.");
+                return;
+            }
+            //ClientSecret
+            if (ClientSecretTextBox.Text.Length < 32)
+            {
+                MessageBox.Show("Слишком короткое значение Client Secret.");
+                return;
+            }
+            //SpreadsheetId
+            if (SpreadsheetIdTextBox.Text.Length < 20)
+            {
+                MessageBox.Show("Слишком короткий идентефикатор таблицы");
+                return;
+            }
+            //CampaignName
+            if (CampaignNameTextBox.Text.Length < 2)
+            {
+                MessageBox.Show("Слишком короткое имя кампании. Используйте более одного символа");
+                return;
+            }
+            if (PhrasesPageNameTextBox.Text.Length < 1 || BidsPageNameTextBox.Text.Length < 1)
+            {
+                MessageBox.Show("Название листов в гугл таблицах не может быть короче 1 символа");
+                return;
+            }
+
+
+            ClientID = ClientIdTextBox.Text;
+            ClientSecret = ClientSecretTextBox.Text;
+            SpreadsheetId = SpreadsheetIdTextBox.Text;
+            PhrasesPageName = PhrasesPageNameTextBox.Text;
+            BidsPageName = BidsPageNameTextBox.Text;
+            CampaignName = CampaignNameTextBox.Text;
+
+
             //Получить кампании
-            Campaigns = GetData(SpreadsheetId, PhrasesPageName, BidsPageName);
+            Campaigns = GetData(SpreadsheetId, PhrasesPageName, BidsPageName, CampaignName);
             //Получить товары
             Token = GetToken(ClientID, ClientSecret).GetAwaiter().GetResult();
             //создать РК, получить их ID
@@ -285,6 +320,7 @@ namespace ZalivkaOzonPerformance
                     Campaigns[i].campaignId = CampaignIds[i].campaignId;
                     AddProductsInCampaign(Campaigns[i], Token);
                 }
+                MessageBox.Show(string.Format("Товары распределены по максимум 250 штук в {0} кампаний с именем '{1} [индекс]'", Campaigns.Count, Campaigns[0].title));
             }
 
             //залить в созданную РК товары
